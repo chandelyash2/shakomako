@@ -18,6 +18,7 @@ import {
   TablePagination,
 } from '@mui/material';
 import axios from 'axios';
+import Modal from '../components/Modal';
 // material
 // components
 import Page from '../components/Page';
@@ -52,6 +53,7 @@ export default function User() {
   const [totalUsers, setTotalUsers] = useState();
   const [userList, setUserList] = useState([]);
   const [userListData, setUserListData] = useState([]);
+  const [blockActive, setBlockActive] = useState(false);
 
   const [orderBy, setOrderBy] = useState('name');
 
@@ -80,37 +82,26 @@ export default function User() {
 
     fetchData();
   }, []);
-  const handleSelectAllClick = (event) => {
-    if (event.target.checked) {
-      const newSelecteds = USERLIST.map((n) => n.name);
-      setSelected(newSelecteds);
-      return;
-    }
-    setSelected([]);
-  };
-
-  const handleClick = (event, name) => {
-    const selectedIndex = selected.indexOf(name);
-    let newSelected = [];
-    if (selectedIndex === -1) {
-      newSelected = newSelected.concat(selected, name);
-    } else if (selectedIndex === 0) {
-      newSelected = newSelected.concat(selected.slice(1));
-    } else if (selectedIndex === selected.length - 1) {
-      newSelected = newSelected.concat(selected.slice(0, -1));
-    } else if (selectedIndex > 0) {
-      newSelected = newSelected.concat(selected.slice(0, selectedIndex), selected.slice(selectedIndex + 1));
-    }
-    setSelected(newSelected);
-  };
+  useEffect(() => {
+    const filteredUser =
+      filterName && userList?.filter((user) => user?.user_name?.toLowerCase() === filterName?.toLowerCase());
+    console.log(filteredUser, '><<<<<<<filtreddd');
+    setUserListData(filteredUser.length === 0 ? userList : filteredUser);
+  }, [filterName, userList]);
+  console.log(userListData, '>>>ListData');
 
   const handleFilterByName = (event) => {
     setFilterName(event.target.value);
   };
-
   return (
     <Page title="User">
       <Container>
+        {blockActive && (
+          <Modal open={blockActive} handleClose={() => setBlockActive(false)}>
+           Are you sure you want to block this user?
+          </Modal>
+        )}
+
         <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
           <Typography variant="h4" gutterBottom>
             Users
@@ -128,7 +119,7 @@ export default function User() {
               <Table>
                 <UserListHead headLabel={TABLE_HEAD} />
                 <TableBody>
-                  {userList?.map((row) => {
+                  {userListData?.map((row) => {
                     const isItemSelected = selected.indexOf(row.user_id) !== -1;
 
                     return (
@@ -141,14 +132,20 @@ export default function User() {
                         aria-checked={isItemSelected}
                       >
                         <TableCell align="left">{row.user_id}</TableCell>
-                        <TableCell align="left">{row.user_name}</TableCell>
+                        <TableCell align="left">{row.user_name?.slice(0)}</TableCell>
                         <TableCell sx={{ maxWidth: '800' }}>
                           <Avatar alt={row.user_name} src={row.user_image} />
                         </TableCell>
                         <TableCell align="left">{row.user_email}</TableCell>
 
                         <TableCell align="left">
-                          {row.blockedbyadmin === 'no' ? <Button variant="contained">Block</Button> : 'Yes'}
+                          {row.blockedbyadmin === 'no' ? (
+                            <Button variant="contained" onClick={() => setBlockActive(true)}>
+                              Block
+                            </Button>
+                          ) : (
+                            'Yes'
+                          )}
                         </TableCell>
                         <TableCell align="left">
                           <Label
